@@ -1,0 +1,55 @@
+version: '3'
+
+services:
+
+  adminer:
+    depends_on:
+      - mysql
+    image: adminer
+    ports:
+      - 8081:8080
+
+  apache:
+    build:
+      context: ./docker/apache
+    depends_on:
+      - mysql
+    ports:
+      - 8080:80
+    volumes:
+      - ./:/var/www/html
+    working_dir: /var/www/html
+
+  elasticsearch:
+    image: elasticsearch:6.8.13
+    environment:
+      - bootstrap.memory_lock=true
+      - discovery.type=single-node
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ports:
+      - 9200:9200
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+
+  kibana:
+    depends_on:
+      - elasticsearch
+    image: kibana:6.8.13
+    ports:
+      - 5601:5601
+
+  mysql:
+    build:
+      context: ./docker/mysql
+    command: --default-authentication-plugin=mysql_native_password
+    environment:
+      MYSQL_ROOT_PASSWORD: test
+    ports:
+      - 3307:3306
+
+  redis:
+    image: redis:5.0.10
+    ports:
+      - 6379:6379
